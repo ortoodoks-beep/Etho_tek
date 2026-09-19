@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="om">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Etho_tek</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080a0f;color:#fff;font-family:Arial,sans-serif}header{padding:16px;text-align:center;font-size:24px;font-weight:700;position:sticky;top:0;background:#080a0fee;z-index:5}.box{max-width:520px;margin:auto;padding:16px}.card{background:#121620;border:1px solid #252b38;border-radius:16px;padding:16px;margin:12px 0}input,button,textarea{width:100%;padding:13px;margin:6px 0;border-radius:10px;border:1px solid #333;background:#0d1118;color:#fff}button{background:#2563eb;border:0;font-weight:700}.nav{position:fixed;bottom:0;left:0;right:0;background:#11151e;display:flex}.nav button{margin:6px;background:transparent}.hidden{display:none}.video{width:100%;max-height:70vh;border-radius:14px;background:#000}.muted{color:#9ca3af;font-size:13px}.danger{background:#b91c1c}
+</style></head>
+<body>
+<header>Etho_tek</header>
+<div class="box">
+<section id="auth">
+<div class="card"><h2>Seeni</h2><input id="login" placeholder="Username / Email / Phone"><input id="pass" type="password" placeholder="Password"><button onclick="login()">Login</button></div>
+<div class="card"><h2>Galmaa'i</h2><input id="ru" placeholder="Username"><input id="re" placeholder="Email"><input id="rp" placeholder="Phone"><input id="rpass" type="password" placeholder="Password"><input id="ry" type="number" placeholder="Birth year"><select id="rg"><option value="">Gender</option><option>Male</option><option>Female</option></select><button onclick="register()">Create account</button></div>
+</section>
+<section id="app" class="hidden">
+<div id="feed"></div>
+<div class="card"><h3>Video olkaa'i</h3><input id="vf" type="file" accept="video/*"><input id="vc" placeholder="Caption"><input id="vh" placeholder="#hashtags"><button onclick="uploadVideo()">Upload</button></div>
+<div class="card"><button class="danger" onclick="logout()">Logout</button></div>
+</section>
+</div>
+<div id="nav" class="nav hidden"><button onclick="loadFeed()">🏠 Home</button><button onclick="document.getElementById('vf').click()">➕ Upload</button><button onclick="logout()">👤 Logout</button></div>
+<script>
+const API=location.origin;let token=localStorage.getItem("etho_tek_token");
+const headers=()=>({Authorization:"Bearer "+token});
+async function req(url,opt={}){opt.headers={...(opt.headers||{}),...headers()};let r=await fetch(API+url,opt);let d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Error");return d}
+async function login(){try{let d=await req("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:loginEl.value,password:pass.value})});token=d.token;localStorage.setItem("etho_tek_token",token);showApp()}catch(e){alert(e.message)}}
+async function register(){try{let d=await req("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:ru.value,email:re.value,phone:rp.value,password:rpass.value,birthYear:ry.value,gender:rg.value})});token=d.token;localStorage.setItem("etho_tek_token",token);showApp()}catch(e){alert(e.message)}}
+async function loadFeed(){try{let rows=await req("/api/videos?limit=30");feed.innerHTML=rows.map(v=>`<div class="card"><b>@${v.username}</b><video class="video" controls playsinline src="${v.url}"></video><p>${esc(v.caption||"")}</p><div class="muted">❤️ ${v.likes} · 💬 ${v.comments} · 👁 ${v.views}</div><button onclick="like(${v.id})">❤️ Like</button></div>`).join("")||'<div class="card">Video hin jiru.</div>'}catch(e){alert(e.message)}}
+async function like(id){try{await req("/api/videos/"+id+"/like",{method:"POST"});loadFeed()}catch(e){alert(e.message)}}
+async function uploadVideo(){let f=vf.files[0];if(!f)return alert("Video filadhu");let fd=new FormData();fd.append("video",f);fd.append("caption",vc.value);fd.append("hashtags",vh.value);try{await req("/api/videos",{method:"POST",body:fd});vf.value="";vc.value="";vh.value="";loadFeed();alert("Video uploaded")}catch(e){alert(e.message)}}
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function logout(){localStorage.removeItem("etho_tek_token");token=null;auth.classList.remove("hidden");app.classList.add("hidden");nav.classList.add("hidden")}
+function showApp(){auth.classList.add("hidden");app.classList.remove("hidden");nav.classList.remove("hidden");loadFeed()}
+const loginEl=document.getElementById("login"); if(token)showApp();
+</script></body></html>

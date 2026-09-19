@@ -20,7 +20,7 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(uploadDir));
 app.use(express.static(publicDir));
-
+app.get("/", (req,res)=>res.sendFile(path.join(root,"index.html")));
 const db = new sqlite3.Database(path.join(root, "database.sqlite"));
 
 function run(sql, params=[]) {
